@@ -352,6 +352,7 @@ async def whoami(client: Client, message):
 async def send_daily_reports():
     session = Session()
     try:
+        await bot.get_chat(CHANNEL_ID)
         moscow_now = datetime.now(timezone('Europe/Moscow'))
         today = moscow_now.date()
         end_time = moscow_now.replace(hour=21, minute=0, second=0, microsecond=0)
