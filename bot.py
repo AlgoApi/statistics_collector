@@ -327,7 +327,7 @@ async def send_daily_reports():
             if field == "int_agent_registered": daily_agent_registered_sum = sum(values)
             if field == "int_model_registered": daily_model_registered_sum = sum(values)
 
-            summary += (f"\n🔹 **{TRANSLATED_INT_FIELDS.get(field, "undefined")}**:\n"
+            summary += (f"\n🔹 **{TRANSLATED_INT_FIELDS.get(field, 'undefined')}**:\n"
                         f"   L Максимум: {f_max} | Среднее: {f_avg:.1f} | Минимум: {f_min}")
 
         await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=summary)
