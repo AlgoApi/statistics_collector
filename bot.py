@@ -211,10 +211,6 @@ def webapp_page():
     """
     return render_template_string(html_template)
 
-def run_flask():
-    app.run(host='0.0.0.0', port=5000)
-
-
 # --- БОТ ---
 bot = Client("bob_stat_collector", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -340,15 +336,18 @@ async def main():
     import time as t
     t.sleep(5)
     Base.metadata.create_all(engine)
-    threading.Thread(target=run_flask, daemon=True).start()
 
     moscow_tz = timezone("Europe/Moscow")
     scheduler = AsyncIOScheduler(timezone=moscow_tz)
     scheduler.add_job(send_daily_reports, 'cron', hour=21, minute=0)
     scheduler.start()
 
-    await bot.start()
-    await idle()
+    try:
+        await bot.start()
+        await idle()
+    finally:
+        if bot:
+            await bot.stop()
 
 if __name__ == "__main__":
     import sys
