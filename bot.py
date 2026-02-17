@@ -21,7 +21,6 @@ import matplotlib.pyplot as plt
 from pytz import timezone
 from werkzeug.datastructures import Headers
 
-# Настройка Matplotlib для Docker
 matplotlib.use('Agg')
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -31,11 +30,10 @@ logger.setLevel(logging.INFO)
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID")
 USERNAMES_REPORTED_EXCLUDE = [""]
 
 def send_error_to_admin(err_text):
-    """Отправка ошибки через прямой HTTP запрос (Requests)"""
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         payload = {
@@ -43,18 +41,18 @@ def send_error_to_admin(err_text):
             "text": f"⚠️ **CRITICAL ERROR**\n\n`{err_text[-4000:]}`",  # Ограничение TG
             "parse_mode": "Markdown"
         }
-        requests.post(url, json=payload, timeout=10)
+        response = requests.post(url, json=payload, timeout=10)
+        if response.status_code >= 400:
+            logger.error(f"Could not send error to admin: {response.text}")
     except Exception as e:
         logger.error(f"Could not send error to admin: {e}")
 
 class TelegramErrorTableHandler(logging.Handler):
-    """Кастомный хендлер: перехватывает logger.error() и выше"""
     def emit(self, record):
         log_entry = self.format(record)
         send_error_to_admin(f"Уровень: {record.levelname}\n{log_entry}")
 
 def global_exception_handler(exc_type, exc_value, exc_traceback):
-    """Перехватчик для необработанных исключений"""
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
