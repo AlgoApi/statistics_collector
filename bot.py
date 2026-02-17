@@ -188,7 +188,7 @@ def webapp_page():
 
             if (user && (user.id || user.username)) {
                 // Формируем инфо о пользователе (username приоритетнее)
-                const userInfo = user.username ? ("@" + user.username) : ("FirstName:" + user.first_name "ID: " + user.id);
+                const userInfo = user.username ? ("@" + user.username) : ("FirstName:" + user.first_name + " | ID: " + user.id);
 
                 // Формируем URL с параметром (замените URL формы на ваш, если он другой)
                 // Параметр в URL должен называться так же, как "переменная" в Яндекс Форме
