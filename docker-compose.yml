@@ -13,7 +13,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3307:3306"
 
   bot:
     build: .
