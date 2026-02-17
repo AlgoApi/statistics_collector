@@ -298,14 +298,14 @@ async def start_cmd(c, m):
 
 
 # Команда принудительной отправки
-@bot.on_message(filters.command("force_report"), filters.private())
+@bot.on_message(filters.command("force_report") & filters.user(ADMIN_USERNAMES))
 async def force_cmd(c, m):
     await m.reply("Запускаю формирование отчетов вручную...")
     await send_daily_reports()
     await m.reply("Принудительная отправка завершена.")
 
 
-@bot.on_message(filters.command("graph"))
+@bot.on_message(filters.command("graph") & filters.user(ADMIN_USERNAMES))
 async def graph_cmd(c, m):
     session = Session()
     try:
