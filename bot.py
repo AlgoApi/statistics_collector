@@ -332,32 +332,33 @@ async def send_daily_reports():
         Session.remove()
 
 
-async def main():
-    import time as t
-    t.sleep(5)
-    Base.metadata.create_all(engine)
-
+async def start_scheduler():
     moscow_tz = timezone("Europe/Moscow")
     scheduler = AsyncIOScheduler(timezone=moscow_tz)
     scheduler.add_job(send_daily_reports, 'cron', hour=21, minute=0)
     scheduler.start()
+    logger.info("Планировщик запущен на 21:00 МСК")
 
-    try:
-        await bot.start()
-        await idle()
-    finally:
-        if bot:
-            await bot.stop()
+
+async def main_async():
+    Base.metadata.create_all(engine)
+
+    await start_scheduler()
+
+    logger.info("Бот и планировщик инициализированы.")
 
 if __name__ == "__main__":
     import sys
-    from pyrogram import idle
 
     if len(sys.argv) > 1 and sys.argv[1] == "--api":
-        logger.info("Запуск Flask сервера...")
+        logger.info("Запуск Flask API...")
         Base.metadata.create_all(engine)
         app.run(host='0.0.0.0', port=5000)
 
     else:
-        logger.info("Запуск Telegram бота...")
-        asyncio.run(main())
+        logger.info("Запуск бота через bot.run()...")
+        @bot.on_connect()
+        async def on_connect(client):
+            await main_async()
+
+        bot.run()
