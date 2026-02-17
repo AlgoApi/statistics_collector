@@ -32,6 +32,7 @@ API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 USERNAMES_REPORTED_EXCLUDE = ["Boobsmarley_assistant_bot", "Boobsmarley", "AlgoApiBot", "drippineveryday"]
+ADMIN_USERNAMES = ["Boobsmarley", "AlgoApi", "drippineveryday"]
 
 def send_error_to_admin(err_text):
     try:
@@ -292,12 +293,12 @@ bot = Client("bob_stat_collector", api_id=API_ID, api_hash=API_HASH, bot_token=B
 
 @bot.on_message(filters.command("start"))
 async def start_cmd(c, m):
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("📝 Открыть форму", web_app=WebAppInfo(url=WEBAPP_URL))]])
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("📝 Сдать отчёт", web_app=WebAppInfo(url=WEBAPP_URL))]])
     await m.reply("Бот готов к работе.", reply_markup=kb)
 
 
 # Команда принудительной отправки
-@bot.on_message(filters.command("force_report"))
+@bot.on_message(filters.command("force_report"), filters.private())
 async def force_cmd(c, m):
     await m.reply("Запускаю формирование отчетов вручную...")
     await send_daily_reports()
