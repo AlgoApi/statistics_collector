@@ -17,6 +17,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import matplotlib
 import matplotlib.pyplot as plt
 from pytz import timezone
+from werkzeug.datastructures import Headers
 
 # Настройка Matplotlib для Docker
 matplotlib.use('Agg')
@@ -129,6 +130,7 @@ app = Flask(__name__)
 @app.route('/bob_stat', methods=['POST'])
 def webhook():
     data = request.json
+    headers: Headers
     headers = request.headers
     if not data: return jsonify({"error": "No data"}), 400
     if not headers: return jsonify({"error": "No headers"}), 400
@@ -136,7 +138,7 @@ def webhook():
         if data.get('telegram_user') is None or data.get('int_lid-sum') is None:
             logger.error(f"invalid data: {data}")
             return jsonify({"error": "invalid data"}), 400
-        if data.get('reference') is None or data.get('reference') != "https://tamelaos.fun/bob_stat/webapp":
+        if headers.get('reference') is not None and headers.get('reference', {}).get('host') != "tamelaos.fun":
             logger.error(f"invalid headers: {headers}")
             return jsonify({"error": "invalid headers"}), 400
         session = Session()
