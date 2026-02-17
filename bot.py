@@ -180,45 +180,72 @@ def webapp_page():
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
         <style>
-            body { margin: 0; padding: 0; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-            #error-message { display: none; text-align: center; padding-top: 50px; font-family: sans-serif; }
-            iframe { border: none; width: 100%; height: 100vh; display: none; }
+            :root {
+                --bg-color: var(--tg-theme-bg-color, #ffffff);
+                --text-color: var(--tg-theme-text-color, #000000);
+                --hint-color: var(--tg-theme-hint-color, #999999);
+            }
+            body { 
+                margin: 0; 
+                padding: 10px; 
+                background-color: var(--bg-color); 
+                color: var(--text-color);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+            .header {
+                text-align: center;
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 15px;
+                color: var(--text-color);
+            }
+            .form-wrapper {
+                border: 2px solid var(--hint-color); /* Цвет рамки подстраивается под тему ТГ */
+                border-radius: 12px;
+                overflow: hidden; /* Чтобы углы iframe тоже казались скругленными */
+                background: #ffffff; /* Белый фон для самой формы */
+                height: calc(100vh - 70px); /* Вычитаем высоту заголовка и отступов */
+            }
+            #error-message { display: none; text-align: center; padding-top: 50px; }
+            iframe { border: none; width: 100%; height: 100%; display: none; }
         </style>
     </head>
     <body>
+        <div class="header">📊 Отчёт Boobsmarley</div>
         <div id="error-message">
             <h2>Доступ запрещен</h2>
             <p>Пожалуйста, используйте официального бота.</p>
         </div>
 
-        <iframe id="ya-frame" frameborder="0"></iframe>
+        <div class="form-wrapper">
+            <iframe id="ya-frame" frameborder="0"></iframe>
+        </div>
 
         <script>
             const webapp = window.Telegram.WebApp;
             webapp.expand();
+            webapp.ready();
 
             const user = webapp.initDataUnsafe.user;
             const frame = document.getElementById('ya-frame');
             const errorDiv = document.getElementById('error-message');
 
             if (user && (user.id || user.username)) {
-                // Формируем инфо о пользователе (username приоритетнее)
                 const userInfo = user.username ? ("@" + user.username) : ("FirstName:" + user.first_name + " | ID: " + user.id);
 
-                // Формируем URL с параметром (замените URL формы на ваш, если он другой)
-                // Параметр в URL должен называться так же, как "переменная" в Яндекс Форме
                 const baseUrl = "https://forms.yandex.ru/u/69935851505690fe69657291/?iframe=1";
                 const finalUrl = baseUrl + "&telegram_user=" + encodeURIComponent(userInfo);
 
                 frame.src = finalUrl;
                 frame.style.display = "block";
 
-                // Подгружаем основной скрипт Яндекса для работы iframe
                 const script = document.createElement('script');
                 script.src = "https://forms.yandex.ru/_static/embed.js";
                 document.head.appendChild(script);
             } else {
                 errorDiv.style.display = "block";
+                document.querySelector('.form-wrapper').style.display = "none";
+                document.querySelector('.header').style.display = "none";
             }
         </script>
     </body>
