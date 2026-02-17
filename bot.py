@@ -306,7 +306,7 @@ async def send_daily_reports():
                     f"Выводы: {r.text_conclusions}\n"
                     f"---------------")
             for field in INT_FIELDS:
-                text += f"\n{TRANSLATED_INT_FIELDS.get(field, "undefined")}: {getattr(r, field)}"
+                text += f"\n{TRANSLATED_INT_FIELDS.get(field, 'undefined')}: {getattr(r, field)}"
             await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=text)
             await asyncio.sleep(0.3)
 
