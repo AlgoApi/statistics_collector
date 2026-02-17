@@ -31,6 +31,23 @@ services:
       CHANNEL_MESSAGE_ID: ${CHANNEL_MESSAGE_ID}
       WEBAPP_URL: ${WEBAPP_URL}
 
+  bot_api:
+    build: .
+    restart: always
+    command: python bot.py --api
+    depends_on:
+      - db
+    environment:
+      TZ: "Europe/Moscow"
+      API_ID: ${API_ID}
+      API_HASH: ${API_HASH}
+      BOT_TOKEN: ${BOT_TOKEN}
+      CHANNEL_ID: ${CHANNEL_ID}
+      ADMIN_ID: ${ADMIN_ID}
+      DB_URI: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@db/${DB_NAME}
+      CHANNEL_MESSAGE_ID: ${CHANNEL_MESSAGE_ID}
+      WEBAPP_URL: ${WEBAPP_URL}
+
     ports:
       - "127.0.0.1:5000:5000"
 

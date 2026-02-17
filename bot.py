@@ -350,8 +350,15 @@ async def main():
     await bot.start()
     await idle()
 
-
 if __name__ == "__main__":
+    import sys
     from pyrogram import idle
 
-    asyncio.run(main())
+    if len(sys.argv) > 1 and sys.argv[1] == "--api":
+        logger.info("Запуск Flask сервера...")
+        Base.metadata.create_all(engine)
+        app.run(host='0.0.0.0', port=5000)
+
+    else:
+        logger.info("Запуск Telegram бота...")
+        asyncio.run(main())
