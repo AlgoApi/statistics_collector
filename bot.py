@@ -11,7 +11,7 @@ import requests
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, Date, func
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
 from flask import Flask, request, jsonify, render_template_string
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import matplotlib
@@ -332,21 +332,6 @@ async def send_daily_reports():
         Session.remove()
 
 
-async def start_scheduler():
-    moscow_tz = timezone("Europe/Moscow")
-    scheduler = AsyncIOScheduler(timezone=moscow_tz)
-    scheduler.add_job(send_daily_reports, 'cron', hour=21, minute=0)
-    scheduler.start()
-    logger.info("Планировщик запущен на 21:00 МСК")
-
-
-async def main_async():
-    Base.metadata.create_all(engine)
-
-    await start_scheduler()
-
-    logger.info("Бот и планировщик инициализированы.")
-
 if __name__ == "__main__":
     import sys
 
@@ -354,11 +339,25 @@ if __name__ == "__main__":
         logger.info("Запуск Flask API...")
         Base.metadata.create_all(engine)
         app.run(host='0.0.0.0', port=5000)
-
     else:
-        logger.info("Запуск бота через bot.run()...")
-        @bot.on_connect()
-        async def on_connect(client):
-            await main_async()
+        logger.info("Подготовка бота...")
 
-        bot.run()
+        Base.metadata.create_all(engine)
+
+        async def setup_and_run():
+            moscow_tz = timezone("Europe/Moscow")
+            scheduler = AsyncIOScheduler(timezone=moscow_tz)
+            scheduler.add_job(send_daily_reports, 'cron', hour=21, minute=0)
+            scheduler.start()
+            logger.info("Планировщик запущен на 21:00 МСК")
+
+            await bot.start()
+            logger.info("Бот запущен и ожидает сообщений...")
+            await idle()
+            await bot.stop()
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(setup_and_run())
+        except KeyboardInterrupt:
+            pass
