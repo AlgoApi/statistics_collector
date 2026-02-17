@@ -130,9 +130,9 @@ app = Flask(__name__)
 def webhook():
     data = request.json
     if not data: return jsonify({"error": "No data"}), 400
-    # debug - delete after
-    logger.info(data)
     try:
+        if data.get('telegram_user') is None or data.get('int_lid-sum') is None:
+            logger.error(f"invalid data: {data}")
         session = Session()
         new_report = Report(
             telegram_user=data.get('telegram_user', 'Unknown'),
