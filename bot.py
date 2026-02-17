@@ -87,6 +87,11 @@ INT_FIELDS = [
     "int_lid_accepted", "int_lid_active", "int_lid_sum", "int_lid_rejected"
 ]
 
+TRANSLATED_INT_FIELDS = {"int_agent_registered": "Агентов записано сегодня", "int_model_registered": "Моделей записано сегодня",
+                         "int_all_agent_registered": "ВСЕГО Агентов записано", "int_all_model_registered": "ВСЕГО Моделей записано",
+                         "int_lid_accepted": "Согласились работать", "int_lid_active": "Активные диалоги",
+                         "int_lid_sum": "Вобщем отписанных", "int_lid_rejected": "Согласились"}
+
 # --- БАЗА ДАННЫХ ---
 Base = declarative_base()
 
@@ -249,9 +254,9 @@ async def graph_cmd(c, m):
 
         plt.figure(figsize=(8, 4))
         plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_lids for s in stats], marker='o', color="blue")
-        plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_lids_rejected for s in stats], marker='!', color="red")
-        plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_model_registered for s in stats], marker='@', color="green")
-        plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_agent_registered for s in stats], marker='#', color="cyan")
+        plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_lids_rejected for s in stats], marker='v', color="red")
+        plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_model_registered for s in stats], marker='P', color="green")
+        plt.plot([s.date.strftime('%d.%m') for s in stats], [s.total_agent_registered for s in stats], marker='P', color="cyan")
         plt.xlabel("Дата")
         plt.ylabel("Значение")
         plt.title('Сумма лидов за неделю')
@@ -296,12 +301,12 @@ async def send_daily_reports():
 
         for r in reports:
             text = (f"📄 **Отчет #{r.id}** ({r.created_at.strftime('%d/%m/%Y, %H:%M:%S')})\n"
-                    f"👤 Сотрудник: **{r.telegram_user}**\n"
+                    f"👤 Сотрудник: **@{r.telegram_user}**\n"
                     f"Сложности: {r.text_difficult}\n"
                     f"Выводы: {r.text_conclusions}\n"
-                    f"---")
+                    f"---------------")
             for field in INT_FIELDS:
-                text += f"\n{field}: {getattr(r, field)}"
+                text += f"\n{TRANSLATED_INT_FIELDS.get(field, "undefined")}: {getattr(r, field)}"
             await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=text)
             await asyncio.sleep(0.3)
 
@@ -322,8 +327,8 @@ async def send_daily_reports():
             if field == "int_agent_registered": daily_agent_registered_sum = sum(values)
             if field == "int_model_registered": daily_model_registered_sum = sum(values)
 
-            summary += (f"\n🔹 **{field}**:\n"
-                        f"   L: {f_max} | Ср: {f_avg:.1f} | Х: {f_min}")
+            summary += (f"\n🔹 **{TRANSLATED_INT_FIELDS.get(field, "undefined")}**:\n"
+                        f"   L Максимум: {f_max} | Среднее: {f_avg:.1f} | Минимум: {f_min}")
 
         await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=summary)
 
