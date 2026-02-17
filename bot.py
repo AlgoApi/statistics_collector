@@ -1,3 +1,4 @@
+import bisect
 import os
 import sys
 import threading
@@ -5,11 +6,12 @@ import logging
 import io
 import asyncio
 import traceback
-from datetime import datetime, timedelta, time
-
+from datetime import datetime, timedelta
+from datetime import date as DateType
+from typing import Sequence
 import requests
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, Date, func
-from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, Date, func, select
+from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session, mapped_column, Mapped
 from flask import Flask, request, jsonify, render_template_string
 from pyrogram import Client, filters, idle
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
@@ -30,7 +32,7 @@ API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("BOT_TOKEN")
-
+USERNAMES_REPORTED_EXCLUDE = [""]
 
 def send_error_to_admin(err_text):
     """Отправка ошибки через прямой HTTP запрос (Requests)"""
@@ -87,6 +89,18 @@ INT_FIELDS = [
     "int_lid_accepted", "int_lid_active", "int_lid_sum", "int_lid_rejected"
 ]
 
+checkpoints_field = [
+    "int_lid_sum"
+]
+
+checkpoints_value = {
+    "int_lid_sum": [30, 60, 70, 90, 140, 180, 220]
+}
+
+def merge_find(data: list[int], target: int) -> int|None:
+    i = bisect.bisect_left(data, target)
+    return data[i - 1] if i > 0 else None
+
 TRANSLATED_INT_FIELDS = {"int_agent_registered": "Агентов записано сегодня", "int_model_registered": "Моделей записано сегодня",
                          "int_all_agent_registered": "ВСЕГО Агентов записано", "int_all_model_registered": "ВСЕГО Моделей записано",
                          "int_lid_accepted": "Согласились работать", "int_lid_active": "Активные диалоги",
@@ -97,31 +111,34 @@ Base = declarative_base()
 
 
 class Report(Base):
-    __tablename__ = 'reports'
-    id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.now)
-    telegram_user = Column(String(100))
-    text_conclusions = Column(String(1000))
-    text_difficult = Column(String(1000))
-    int_agent_registered = Column(Integer, default=0)
-    int_all_agent_registered = Column(Integer, default=0)
-    int_all_model_registered = Column(Integer, default=0)
-    int_lid_accepted = Column(Integer, default=0)
-    int_lid_active = Column(Integer, default=0)
-    int_lid_rejected = Column(Integer, default=0)
-    int_lid_sum = Column(Integer, default=0)
-    int_model_registered = Column(Integer, default=0)
+    __tablename__ = "reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    telegram_user: Mapped[str] = mapped_column(String(100))
+    text_conclusions: Mapped[str] = mapped_column(String(1000))
+    text_difficult: Mapped[str] = mapped_column(String(1000))
+
+    int_agent_registered: Mapped[int] = mapped_column(Integer, default=0)
+    int_all_agent_registered: Mapped[int] = mapped_column(Integer, default=0)
+    int_all_model_registered: Mapped[int] = mapped_column(Integer, default=0)
+    int_lid_accepted: Mapped[int] = mapped_column(Integer, default=0)
+    int_lid_active: Mapped[int] = mapped_column(Integer, default=0)
+    int_lid_rejected: Mapped[int] = mapped_column(Integer, default=0)
+    int_lid_sum: Mapped[int] = mapped_column(Integer, default=0)
+    int_model_registered: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class DailyStats(Base):
-    __tablename__ = 'daily_stats'
-    id = Column(Integer, primary_key=True)
-    date = Column(Date, unique=True)
-    total_reports = Column(Integer)
-    total_lids = Column(Integer)
-    total_lids_rejected = Column(Integer)
-    total_model_registered = Column(Integer)
-    total_agent_registered = Column(Integer)
+    __tablename__ = "daily_stats"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    date: Mapped[DateType] = mapped_column(Date, unique=True)
+    total_reports: Mapped[int] = mapped_column(Integer)
+    total_lids: Mapped[int] = mapped_column(Integer)
+    total_lids_rejected: Mapped[int] = mapped_column(Integer)
+    total_model_registered: Mapped[int] = mapped_column(Integer)
+    total_agent_registered: Mapped[int] = mapped_column(Integer)
 
 
 engine = create_engine(DB_URI, pool_recycle=3600)
@@ -170,7 +187,7 @@ def webhook():
         Session.remove()
 
 
-@app.route('/webapp')
+@app.route('/bob_stat/webapp')
 def webapp_page():
     html_template = """
     <!DOCTYPE html>
@@ -321,12 +338,21 @@ async def send_daily_reports():
     try:
         moscow_now = datetime.now(timezone('Europe/Moscow'))
         today = moscow_now.date()
-        reports = session.query(Report).filter(func.date(Report.created_at) == today).all()
+        end_time = moscow_now.replace(hour=21, minute=0, second=0, microsecond=0)
+        start_time = end_time - timedelta(days=1)
+        logger.info(f"Сбор отчетов за период: {start_time} - {end_time}")
+        stmt = select(Report).where(
+            Report.created_at >= start_time,
+            Report.created_at < end_time
+        )
+        reports: Sequence[Report] = session.scalars(stmt).all()
 
         if not reports:
             await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=f"📅 {today}: Отчетов нет.")
             return
 
+        usernames_reported = list()
+        checkpointed_reports: dict[str, tuple[str, int, int]] = dict()
         for r in reports:
             text = (f"📄 **Отчет #{r.id}** ({r.created_at.strftime('%d/%m/%Y, %H:%M:%S')})\n"
                     f"👤 Сотрудник: **@{r.telegram_user}**\n"
@@ -334,12 +360,40 @@ async def send_daily_reports():
                     f"Выводы: {r.text_conclusions}\n"
                     f"---------------")
             for field in INT_FIELDS:
-                text += f"\n{TRANSLATED_INT_FIELDS.get(field, 'undefined')}: {getattr(r, field)}"
+                field_data = int(getattr(r, field))
+                field_name = TRANSLATED_INT_FIELDS.get(field, "undefined")
+                if field in checkpoints_field:
+                    checkpoint = merge_find(checkpoints_value[field], field_data)
+                    if checkpoint:
+                        user_val = getattr(r, "telegram_user", None)
+                        if user_val is None:
+                            continue
+                        if not isinstance(user_val, str):
+                            user_val = str(user_val)
+                        text += f"\n{field_name}: {field_data} | Преодолел чекпоинт 🎉🎉 {checkpoint} 🎉🎉"
+                        checkpointed_reports.update({user_val: (field_name, checkpoint, field_data)})
+                    else:
+                        text += f"\n{field_name}: {field_data}"
             await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=text)
+            usernames_reported.append(r.telegram_user)
             await asyncio.sleep(0.3)
 
-        summary = f"📊 **ИТОГИ ДНЯ {today}**\nВсего отчетов: {len(reports)}\n"
+        unreported_text = "❌ Не отправили отчёты вовремя: "
+        unreported_exists = False
+        async for member in bot.get_chat_members(CHANNEL_ID):
+            if member.user.id not in usernames_reported and member.user.username not in usernames_reported:
+                if member.user.id not in USERNAMES_REPORTED_EXCLUDE and member.user.username not in USERNAMES_REPORTED_EXCLUDE:
+                    if member.user.username:
+                        unreported_text += f" L {member.user.username}\n"
+                    else:
+                        unreported_text += f" L {member.user.id}\n"
+                    unreported_exists = True
+        if unreported_exists:
+            await asyncio.sleep(0.3)
+            await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=unreported_text)
 
+        await asyncio.sleep(0.3)
+        summary = f"📊 **ИТОГИ ДНЯ {today}**\nВсего отчетов: {len(reports)}\n"
         daily_lids_sum = 0
         daily_lids_rejected_sum = 0
         daily_agent_registered_sum = 0
@@ -357,7 +411,6 @@ async def send_daily_reports():
 
             summary += (f"\n🔹 **{TRANSLATED_INT_FIELDS.get(field, 'undefined')}**:\n"
                         f"   L Максимум: {f_max} | Среднее: {f_avg:.1f} | Минимум: {f_min}")
-
         await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=summary)
 
         ds = session.query(DailyStats).filter_by(date=today).first()
@@ -369,6 +422,20 @@ async def send_daily_reports():
         ds.total_agent_registered = daily_agent_registered_sum
         session.add(ds)
         session.commit()
+
+        checkpoint_summary_exists = False
+        checkpoint_summary = "⭐ Сотрудники прошедшие этап: \n"
+        for checkpointed_report, checkpoint_data in checkpointed_reports.items():
+            checkpoint_name: str
+            checkpoint_value: int
+            current_value: int
+            checkpoint_name, checkpoint_value, current_value = checkpoint_data
+            checkpoint_summary += f"  L @{checkpointed_report} прошёл этап: {checkpoint_name}=={checkpoint_value}, набрал {current_value}\n"
+            checkpoint_summary_exists = True
+        if checkpoint_summary_exists:
+            await asyncio.sleep(0.3)
+            await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=summary)
+
     except Exception as e:
         logger.error(f"Report Error: {e}")
     finally:
