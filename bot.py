@@ -217,18 +217,32 @@ def webapp_page():
                 color: var(--text-color);
             }
             .form-wrapper {
+                flex-grow: 1;
                 border: 2px solid var(--hint-color); /* Цвет рамки подстраивается под тему ТГ */
                 border-radius: 12px;
                 overflow: hidden; /* Чтобы углы iframe тоже казались скругленными */
                 background: #ffffff; /* Белый фон для самой формы */
                 height: calc(100vh - 70px); /* Вычитаем высоту заголовка и отступов */
+                -webkit-overflow-scrolling: touch;
+                overflow-y: auto;
+            }
+            .footer {
+                text-align: center;
+                padding: 10px 0;
+                font-size: 13px;
+                color: var(--hint-color);
+                border-top: 1px solid rgba(0,0,0,0.1);
+            }
+            .footer a {
+                color: var(--link-color);
+                text-decoration: none;
             }
             #error-message { display: none; text-align: center; padding-top: 50px; }
-            iframe { border: none; width: 100%; height: 100%; display: none; }
+            iframe { border: none; width: 100%; height: 100%; display: block; }
         </style>
     </head>
     <body>
-        <div class="header">📊 Отчёт Boobsmarley</div>
+        <div class="header">📊 Отчёт "Основа"</div>
         <div id="error-message">
             <h2>Доступ запрещен</h2>
             <p>Пожалуйста, используйте официального бота.</p>
@@ -236,6 +250,10 @@ def webapp_page():
 
         <div class="form-wrapper">
             <iframe id="ya-frame" frameborder="0"></iframe>
+        </div>
+        
+        <div class="footer">
+            Разработка и поддержка: <a href="https://t.me/AlgoApi">@AlgoApi aka Tamelaos</a>
         </div>
 
         <script>
