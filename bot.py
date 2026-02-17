@@ -356,7 +356,7 @@ async def send_daily_reports():
         await bot.get_chat(CHANNEL_ID)
         moscow_now = datetime.now(timezone('Europe/Moscow'))
         today = moscow_now.date()
-        end_time = moscow_now.replace(hour=21, minute=0, second=0, microsecond=0)
+        end_time = moscow_now.replace(hour=23, minute=59, second=0, microsecond=0)
         start_time = end_time - timedelta(days=1)
         logger.info(f"Сбор отчетов за период: {start_time} - {end_time}")
         stmt = select(Report).where(
@@ -477,9 +477,9 @@ if __name__ == "__main__":
         async def setup_and_run():
             moscow_tz = timezone("Europe/Moscow")
             scheduler = AsyncIOScheduler(timezone=moscow_tz)
-            scheduler.add_job(send_daily_reports, 'cron', hour=21, minute=0)
+            scheduler.add_job(send_daily_reports, 'cron', hour=23, minute=59)
             scheduler.start()
-            logger.info("Планировщик запущен на 21:00 МСК")
+            logger.info("Планировщик запущен на 23:59 МСК")
 
             await bot.start()
             logger.info("Бот запущен и ожидает сообщений...")
