@@ -129,10 +129,16 @@ app = Flask(__name__)
 @app.route('/bob_stat', methods=['POST'])
 def webhook():
     data = request.json
+    headers = request.headers
     if not data: return jsonify({"error": "No data"}), 400
+    if not headers: return jsonify({"error": "No headers"}), 400
     try:
         if data.get('telegram_user') is None or data.get('int_lid-sum') is None:
             logger.error(f"invalid data: {data}")
+            return jsonify({"error": "invalid data"}), 400
+        if data.get('reference') is None or data.get('reference') != "https://tamelaos.fun/bob_stat/webapp":
+            logger.error(f"invalid headers: {headers}")
+            return jsonify({"error": "invalid headers"}), 400
         session = Session()
         new_report = Report(
             telegram_user=data.get('telegram_user', 'Unknown'),
