@@ -1,0 +1,11 @@
+pyrogram
+tgcrypto
+flask
+sqlalchemy
+pymysql
+apscheduler
+matplotlib
+python-dotenv
+cryptography
+pytz
+requests
