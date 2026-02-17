@@ -31,7 +31,7 @@ API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
-USERNAMES_REPORTED_EXCLUDE = [""]
+USERNAMES_REPORTED_EXCLUDE = ["Boobsmarley_assistant_bot", "Boobsmarley", "AlgoApiBot", "drippineveryday"]
 
 def send_error_to_admin(err_text):
     try:
@@ -391,6 +391,8 @@ async def send_daily_reports():
                         checkpointed_reports.update({user_val: (field_name, checkpoint, field_data)})
                     else:
                         text += f"\n{field_name}: {field_data}"
+                else:
+                    text += f"\n{field_name}: {field_data}"
             await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=text)
             usernames_reported.append(r.telegram_user)
             await asyncio.sleep(0.3)
