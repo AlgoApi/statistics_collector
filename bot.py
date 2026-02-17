@@ -84,7 +84,7 @@ WEBAPP_URL = os.getenv("WEBAPP_URL")
 INT_FIELDS = [
     "int_agent_registered", "int_model_registered",
     "int_all_agent_registered", "int_all_model_registered",
-    "int_lid_accepted", "int_lid_active", "int_lid_sum", "int_lid_rejected"
+    "int_lid_accepted", "int_lid_active", "int_lid_rejected", "int_lid_sum"
 ]
 
 checkpoints_field = [
