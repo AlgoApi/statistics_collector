@@ -76,6 +76,7 @@ threading.excepthook = lambda args: global_exception_handler(args.exc_type, args
 
 DB_URI = os.getenv("DB_URI")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+CHANNEL_MESSAGE_ID = int(os.getenv("CHANNEL_MESSAGE_ID"))
 WEBAPP_URL = os.getenv("WEBAPP_URL")
 
 # Список параметров для статистики
@@ -284,7 +285,7 @@ async def send_daily_reports():
         reports = session.query(Report).filter(func.date(Report.created_at) == today).all()
 
         if not reports:
-            await bot.send_message(CHANNEL_ID, f"📅 {today}: Отчетов нет.")
+            await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=f"📅 {today}: Отчетов нет.")
             return
 
         for r in reports:
@@ -295,7 +296,7 @@ async def send_daily_reports():
                     f"---")
             for field in INT_FIELDS:
                 text += f"\n{field}: {getattr(r, field)}"
-            await bot.send_message(CHANNEL_ID, text)
+            await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=text)
             await asyncio.sleep(0.3)
 
         summary = f"📊 **ИТОГИ ДНЯ {today}**\nВсего отчетов: {len(reports)}\n"
@@ -318,7 +319,7 @@ async def send_daily_reports():
             summary += (f"\n🔹 **{field}**:\n"
                         f"   L: {f_max} | Ср: {f_avg:.1f} | Х: {f_min}")
 
-        await bot.send_message(CHANNEL_ID, summary)
+        await bot.send_message(CHANNEL_ID, reply_to_message_id=CHANNEL_MESSAGE_ID, text=summary)
 
         ds = session.query(DailyStats).filter_by(date=today).first()
         if not ds: ds = DailyStats(date=today)
