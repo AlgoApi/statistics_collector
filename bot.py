@@ -130,6 +130,8 @@ app = Flask(__name__)
 def webhook():
     data = request.json
     if not data: return jsonify({"error": "No data"}), 400
+    # debug - delete after
+    logger.info(data)
     try:
         session = Session()
         new_report = Report(
