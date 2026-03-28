@@ -2,6 +2,7 @@ werkzeug
 pyrogram
 tgcrypto
 flask
+flask[async]
 sqlalchemy
 pymysql
 apscheduler
@@ -10,3 +11,11 @@ python-dotenv
 cryptography
 pytz
 requests
+asyncmy
+pandas
+openpyxl
+pymysql
+uvicorn[standard]
+asgiref
+requests[socks]
+python-dotenv

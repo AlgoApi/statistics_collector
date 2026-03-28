@@ -1,40 +1,37 @@
 services:
-  db:
-    image: mariadb:10.6
-    restart: always
-    environment:
-      TZ: "Europe/Moscow"
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db_data:/var/lib/mysql
-    ports:
-      - "127.0.0.1:3307:3306"
-
   bot:
     build: .
-    restart: always
-    depends_on:
-      - db
+    restart: "on-failure"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
     environment:
       TZ: "Europe/Moscow"
       API_ID: ${API_ID}
       API_HASH: ${API_HASH}
       BOT_TOKEN: ${BOT_TOKEN}
       CHANNEL_ID: ${CHANNEL_ID}
+      ADMIN_CHANNEL_ID: ${ADMIN_CHANNEL_ID}
       ADMIN_ID: ${ADMIN_ID}
-      DB_URI: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@db/${DB_NAME}
+      DB_URI: mysql+asyncmy://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-adjoij:3306/${DB_NAME}
       CHANNEL_MESSAGE_ID: ${CHANNEL_MESSAGE_ID}
       WEBAPP_URL: ${WEBAPP_URL}
+    networks: 
+      - dokploy-network
 
   bot_api:
     build: .
-    restart: always
-    command: python bot.py --api
-    depends_on:
-      - db
+    restart: "on-failure"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    command: uvicorn bot:asgi_app --host 0.0.0.0 --port 5000
     environment:
       TZ: "Europe/Moscow"
       API_ID: ${API_ID}
@@ -42,12 +39,21 @@ services:
       BOT_TOKEN: ${BOT_TOKEN}
       CHANNEL_ID: ${CHANNEL_ID}
       ADMIN_ID: ${ADMIN_ID}
-      DB_URI: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@db/${DB_NAME}
+      ADMIN_CHANNEL_ID: ${ADMIN_CHANNEL_ID}
+      DB_URI: mysql+asyncmy://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-adjoij:3306/${DB_NAME}
       CHANNEL_MESSAGE_ID: ${CHANNEL_MESSAGE_ID}
       WEBAPP_URL: ${WEBAPP_URL}
-
+    networks: 
+      - dokploy-network
     ports:
       - "127.0.0.1:5000:5000"
 
-volumes:
-  db_data:
+#  import_data:
+#    build: .
+#    restart: "no"
+#    command: python import_tool.py
+#    environment:
+#      TZ: "Europe/Moscow"
+#      DB_URI: mariadb+pymysql://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-adjoij:3306/${DB_NAME}
+#    networks:
+#      - dokploy-network
