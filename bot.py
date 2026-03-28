@@ -62,10 +62,14 @@ def load_session_config(phone: str, informal_contact: bool = True) -> Optional[D
         return None
 
 def build_socks5_proxy_url(config) -> str|None:
+    if not config or not isinstance(config, dict):
+        logger.error("cannot find config")
+        return None
     proxy = config.get("proxy")
     if not proxy or not isinstance(proxy, list):
         logger.error("cannot find proxy")
         return None
+
 
     ptype = (config.get("proxy_type") or proxy[0]).lower()
 
