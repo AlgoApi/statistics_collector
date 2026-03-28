@@ -16,7 +16,7 @@ services:
       CHANNEL_ID: ${CHANNEL_ID}
       ADMIN_CHANNEL_ID: ${ADMIN_CHANNEL_ID}
       ADMIN_ID: ${ADMIN_ID}
-      DB_URI: mysql+asyncmy://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-adjoij:3306/${DB_NAME}
+      DB_URI: mysql+asyncmy://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-lwvvxd:3306/${DB_NAME}
       CHANNEL_MESSAGE_ID: ${CHANNEL_MESSAGE_ID}
       WEBAPP_URL: ${WEBAPP_URL}
     networks: 
@@ -40,7 +40,7 @@ services:
       CHANNEL_ID: ${CHANNEL_ID}
       ADMIN_ID: ${ADMIN_ID}
       ADMIN_CHANNEL_ID: ${ADMIN_CHANNEL_ID}
-      DB_URI: mysql+asyncmy://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-adjoij:3306/${DB_NAME}
+      DB_URI: mysql+asyncmy://${DB_USER}:${DB_PASSWORD}@boobsmarley-sequence-db-lwvvxd:3306/${DB_NAME}
       CHANNEL_MESSAGE_ID: ${CHANNEL_MESSAGE_ID}
       WEBAPP_URL: ${WEBAPP_URL}
     networks: 
