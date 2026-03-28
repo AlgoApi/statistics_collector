@@ -63,11 +63,11 @@ def load_session_config(phone: str, informal_contact: bool = True) -> Optional[D
 
 def build_socks5_proxy_url(config) -> str|None:
     if not config or not isinstance(config, dict):
-        logger.error("cannot find config")
+        logger.info("cannot find config")
         return None
     proxy = config.get("proxy")
     if not proxy or not isinstance(proxy, list):
-        logger.error("cannot find proxy")
+        logger.info("cannot find proxy")
         return None
 
 
@@ -443,7 +443,8 @@ def webapp_page():
 asgi_app = WsgiToAsgi(app)
 # --- БОТ ---
 def get_bot_proxy_pyrogram(config: Dict[str, Any]) -> Optional[dict]:
-
+    if not config or not isinstance(config, dict):
+        return None
     proxy = config.get("proxy")
     if not proxy or not isinstance(proxy, list):
         return None
